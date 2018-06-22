@@ -44,10 +44,10 @@ The operations documented in this section change in some or other way the conten
 used, and are only provided for performance reasons. Be careful if you choose to use them.
 
 Row swap: `m:rswap(i1, i2)`
-> Interchanges the contents of rows *i1* and *i2*.
+> Interchanges the contents of rows *i1* and *i2*. The arguments must be integers between 1 and `m.rows`.
 
 Column swap: `m:cswap(j1, j2)`
-> Similar to row swap, but this time the contents of the columns *j1* and *j2* get swapped.
+> Similar to row swap, but this time the contents of the columns *j1* and *j2* get swapped. The arguments must be integers between 1 and `m.cols`.
 
 Reshape: `m:reshape(h, w)`
 > This changes the `rows` and `cols` attribute of the underlaying matrix without changing the content.
