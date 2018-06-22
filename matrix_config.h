@@ -32,6 +32,9 @@
 // support for matrix multiplication: m:dot(p) where sizes must be i*k and k*j
 #define MATRIX_ENABLE_DOT
 
+// support for transposition composed with matrix multiplication: m:tdot(p), equivalent to m:t():dot(p)
+#define MATRIX_ENABLE_TDOT
+
 // support for MUTABLE matrix row swapping: m:rswap(i1, i2)
 #define MATRIX_ENABLE_RSWAP
 

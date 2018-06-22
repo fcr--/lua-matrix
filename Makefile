@@ -1,4 +1,4 @@
-CFLAGS ?= `pkg-config --cflags lua5.3` -fpic -Wall -O2
+CFLAGS ?= `pkg-config --cflags lua5.3` -fpic -Wall -O2 -march=native
 MATRIX_SO ?= matrix.so
 
 $(MATRIX_SO): matrix.o

@@ -413,6 +413,29 @@ static int matrix_mt_dot(lua_State * L) {
 }
 #endif
 
+#ifdef MATRIX_ENABLE_TDOT
+static int matrix_mt_tdot(lua_State * L) {
+    struct Matrix * m = (struct Matrix*)luaL_checkudata(L, 1, MATRIX_MT);
+    struct Matrix * p = (struct Matrix*)luaL_checkudata(L, 2, MATRIX_MT);
+    if (m->rows != p->rows)
+        return luaL_error(L, "non-conformant operands for tdot %d*%d by %d*%d", m->rows, m->cols, p->rows, p->cols);
+    struct Matrix * dest = push_matrix(L, m->cols, p->cols);
+    int i, j;
+    for (j = 0; j < dest->cols; j++) {
+        for (i = 0; i < dest->rows; i++) {
+            MATRIX_TYPE res = 0;
+            int m_cursor = i * m->rows;
+            int p_cursor = j * p->rows;
+            int p_limit = p_cursor + p->rows;
+            for (; p_cursor < p_limit; p_cursor++, m_cursor++)
+                res += m->d[m_cursor] * p->d[p_cursor];
+            dest->d[i + j * dest->rows] = res;
+        }
+    }
+    return 1;
+}
+#endif
+
 #ifdef MATRIX_ENABLE_RSWAP
 static void matrix_rswap(struct Matrix * m, int r1, int r2) {
     int limit = m->rows * m->cols;
@@ -498,6 +521,9 @@ int luaopen_matrix(lua_State * L) {
 #endif
 #ifdef MATRIX_ENABLE_DOT
             {"dot", &matrix_mt_dot},
+#endif
+#ifdef MATRIX_ENABLE_DOT
+            {"tdot", &matrix_mt_tdot},
 #endif
 #ifdef MATRIX_ENABLE_RSWAP
             {"rswap", &matrix_mt_rswap},
