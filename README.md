@@ -34,9 +34,13 @@ with `matrix.fromtable(t)`, where the argument must have the same format as retu
 Even though the `cols` and `rows` keys may be optional (default 1), the number of numeric items in the
 table `#t` must be equal to `(t.cols or 1)*(t.rows or 1)`.
 
+#### Slicing
+
+TO DOCUMENT
+
 #### Operations
 
-TODO
+TO DOCUMENT
 
 #### Mutable Operations
 
