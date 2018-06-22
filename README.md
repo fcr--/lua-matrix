@@ -37,3 +37,19 @@ table `#t` must be equal to `(t.cols or 1)*(t.rows or 1)`.
 #### Operations
 
 TODO
+
+#### Mutable Operations
+
+The operations documented in this section change in some or other way the content of the matrices
+used, and are only provided for performance reasons. Be careful if you choose to use them.
+
+Row swap: `m:rswap(i1, i2)`
+> Interchanges the contents of rows *i1* and *i2*.
+
+Column swap: `m:cswap(j1, j2)`
+> Similar to row swap, but this time the contents of the columns *j1* and *j2* get swapped.
+
+Reshape: `m:reshape(h, w)`
+> This changes the `rows` and `cols` attribute of the underlaying matrix without changing the content.
+> However, the total size of the matrix must be kept the same, thus h\*w must be equal to m.rows\*m.cols.
+> This can be used as a fast way to transpose a row vector to a column vector and vice versa.
