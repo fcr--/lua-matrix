@@ -242,18 +242,22 @@ static int matrix_mt__newindex(lua_State * L) {
 static int matrix_mt__tostring(lua_State * L) {
     struct Matrix * m = (struct Matrix*)luaL_checkudata(L, 1, MATRIX_MT);
     int i, limit = m->rows * m->cols;
+    lua_checkstack(L, 3 + 2 * MATRIX_MAX_TOSTRING);
     lua_pushstring(L, "[ ");
     if (limit > MATRIX_MAX_TOSTRING) limit = MATRIX_MAX_TOSTRING + 1;
     for (i = 0; i < limit; i++) {
+        MATRIX_TYPE v = m->d[i];
         if (i == MATRIX_MAX_TOSTRING) {
-            lua_pushstring(L, "... ");
-            break;
+            lua_pushstring(L, "...");
+        } else if (v == (int)v) {
+            lua_pushinteger(L, v);
+        } else {
+            lua_pushnumber(L, v);
         }
-        if (i == limit - 1) lua_pushfstring(L, "%f ", m->d[i]);
-        else lua_pushfstring(L, "%f, ", m->d[i]);
+        lua_pushstring(L, i >= limit - 1 ? " " : ", ");
     }
     lua_pushstring(L, "]");
-    lua_concat(L, 2 + limit);
+    lua_concat(L, 2 + 2*limit);
     return 1;
 }
 #endif
@@ -265,7 +269,9 @@ static int matrix_mt_totable(lua_State * L) {
     int size = m->rows * m->cols;
     lua_createtable(L, size, 2);
     while (i < size) {
-        lua_pushnumber(L, m->d[i]);
+        MATRIX_TYPE v = m->d[i];
+        if (v == (int)v) lua_pushinteger(L, v);
+        else lua_pushnumber(L, v);
         lua_rawseti(L, -2, ++i);
     }
     lua_pushinteger(L, m->rows);
@@ -374,6 +380,17 @@ matrix_mt__declare_binop(__div, op)
 #    error "MATRIX_ENABLE__MOD is only supported for float and double"
 #  endif
 matrix_mt__declare_binop(__mod, op)
+#undef op
+#endif
+#ifdef MATRIX_ENABLE__POW
+#  if defined(MATRIX_TYPE_FLOAT)
+#    define op(x,y) powf(x, y)
+#  elif defined(MATRIX_TYPE_DOUBLE)
+#    define op(x,y) pow(x, y)
+#  else
+#    error "MATRIX_ENABLE__POW is only supported for float and double"
+#  endif
+matrix_mt__declare_binop(__pow, op)
 #undef op
 #endif
 
@@ -530,6 +547,9 @@ int luaopen_matrix(lua_State * L) {
 #endif
 #ifdef MATRIX_ENABLE__MOD
             {"__mod", &matrix_mt__mod},
+#endif
+#ifdef MATRIX_ENABLE__MOD
+            {"__pow", &matrix_mt__pow},
 #endif
 #ifdef MATRIX_ENABLE_RESHAPE
             {"reshape", &matrix_mt_reshape},
