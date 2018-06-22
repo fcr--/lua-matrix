@@ -132,14 +132,14 @@ static int matrix_mt__index(lua_State * L) {
         int dim, row1, rown, col1, coln;
         int point = 0;
         for (dim = 1; dim <= 2; dim++) {
-            int * v1, * vn;
-            if (dim == 1) { v1=&row1; vn=&rown; } else { v1=&col1; vn=&coln; }
+            int * v1, * vn, n;
+            if (dim == 1) { v1=&row1; vn=&rown; n=m->rows; } else { v1=&col1; vn=&coln; n=m->cols; }
             lua_pushinteger(L, dim);
             lua_gettable(L, 2);
             switch (lua_type(L, -1)) {
                 case LUA_TNIL:
                     *v1 = 1;
-                    *vn = m->rows;
+                    *vn = n;
                     break;
                 case LUA_TNUMBER:
                     *v1 = *vn = luaL_checkinteger(L, -1);
@@ -168,7 +168,7 @@ static int matrix_mt__index(lua_State * L) {
             int height = rown - row1 + 1;
             struct Matrix * dest = push_matrix(L, height, coln - col1 + 1);
             int i, j, k = 0;
-            for (j = (col1 - 1)*stride; i < limit; i += stride) {
+            for (j = (col1 - 1)*stride + row1 - 1; j < limit; j += stride) {
                 for (i = j; i < j + height; i++) dest->d[k++] = m->d[i];
             }
         }
@@ -189,14 +189,14 @@ static int matrix_mt__newindex(lua_State * L) {
     } else if (lua_istable(L, 2)) { // stride support {rows, cols}, where they can be nil, a number or {from, to}
         int dim, row1, rown, col1, coln;
         for (dim = 1; dim <= 2; dim++) {
-            int * v1, * vn;
-            if (dim == 1) { v1=&row1; vn=&rown; } else { v1=&col1; vn=&coln; }
+            int * v1, * vn, n;
+            if (dim == 1) { v1=&row1; vn=&rown; n=m->rows; } else { v1=&col1; vn=&coln; n=m->cols; }
             lua_pushinteger(L, dim);
             lua_gettable(L, 2);
             switch (lua_type(L, -1)) {
                 case LUA_TNIL:
                     *v1 = 1;
-                    *vn = m->rows;
+                    *vn = n;
                     break;
                 case LUA_TNUMBER:
                     *v1 = *vn = luaL_checkinteger(L, -1);
@@ -230,7 +230,7 @@ static int matrix_mt__newindex(lua_State * L) {
             if (src->rows != height || src->cols != coln - col1 + 1)
                 return luaL_error(L, "non-conforming source %d*%d matrix, expecting %d*%d",
                         src->rows, src->cols, height, coln - col1  + 1);
-            for (j = (col1 - 1)*stride; i < limit; i += stride) {
+            for (j = (col1 - 1)*stride + row1 - 1; j < limit; j += stride) {
                 for (i = j; i < j + height; i++) m->d[i] = src->d[k++];
             }
         }
