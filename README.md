@@ -36,7 +36,22 @@ table `#t` must be equal to `(t.cols or 1)*(t.rows or 1)`.
 
 #### Slicing
 
-TO DOCUMENT
+In matrix jargon, slicing refers to the process of extracting a subset made of contiguous rows and
+contiguous columns.  In this library both reading and writing slices is supported.
+
+Let m be a h\*w matrix:
+* `m[{}]` ← returns a copy of the array.
+* `m[{1}]` ← returns a 1\*w matrix with the contents of m's first row
+* `m[{{2,4}}]` ← returns a 3\*w matrix with the contents of m's second to fourth rows
+* `m[{nil,2}]` ← returns a h\*1 matrix with a copy of m's second column.
+* `m[{{10,19},{20,39}]` ← returns a 10\*20 matrix with the rows 10 to 19 of the columns 20 to 39 of m.
+
+Note that returned slices are not "views" but full fledged matrices, copying the content of the
+slice instead of sharing memory.
+
+Slices can also be used for writing operations using a similar syntax. Let m be a h\*w matrix:
+* `m[{1}] = 42` ← fills the matrix first row with fourty-twos
+* `m[{nil,{2,3}}] = p` ← copies p into m's second and third columns, p must be a h\*2 matrix.
 
 #### Operations
 
