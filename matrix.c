@@ -390,6 +390,21 @@ static int matrix_mt_reshape(lua_State * L) {
 }
 #endif
 
+#ifdef MATRIX_ENABLE_T
+static int matrix_mt_t(lua_State * L) {
+    struct Matrix * m = (struct Matrix*)luaL_checkudata(L, 1, MATRIX_MT);
+    struct Matrix * dest = push_matrix(L, m->cols, m->rows);
+    int i, j;
+    int m_cursor = 0;
+    for (j = 0; j < m->cols; j++) {
+        int dest_cursor = j;
+        for (i = 0; i < m->rows; i++, dest_cursor += m->cols)
+            dest->d[dest_cursor] = m->d[m_cursor++];
+    }
+    return 1;
+}
+#endif
+
 #ifdef MATRIX_ENABLE_DOT
 static int matrix_mt_dot(lua_State * L) {
     struct Matrix * m = (struct Matrix*)luaL_checkudata(L, 1, MATRIX_MT);
@@ -518,6 +533,9 @@ int luaopen_matrix(lua_State * L) {
 #endif
 #ifdef MATRIX_ENABLE_RESHAPE
             {"reshape", &matrix_mt_reshape},
+#endif
+#ifdef MATRIX_ENABLE_T
+            {"t", &matrix_mt_t},
 #endif
 #ifdef MATRIX_ENABLE_DOT
             {"dot", &matrix_mt_dot},

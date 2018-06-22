@@ -29,6 +29,9 @@
 // support for MUTABLE matrix reshaping: m:reshape(rows, cols) rows*cols must be equal to m.rows*m.cols
 #define MATRIX_ENABLE_RESHAPE
 
+// support for matrix transposition: m:t()
+#define MATRIX_ENABLE_T
+
 // support for matrix multiplication: m:dot(p) where sizes must be i*k and k*j
 #define MATRIX_ENABLE_DOT
 
