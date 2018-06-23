@@ -41,3 +41,4 @@ assert(m2.rows==1 and m2.cols==2)
 assert(m2[1] == 5 and m2[2] == 6)
 
 assert(table.concat((5^matrix.fromtable{2,3, rows=2}):totable(), ' ') == '25 125')
+assert(table.concat((-matrix.fromtable{1,-2, rows=2}):totable(), ' ') == '-1 2')

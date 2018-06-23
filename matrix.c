@@ -394,6 +394,18 @@ matrix_mt__declare_binop(__pow, op)
 #undef op
 #endif
 
+#ifdef MATRIX_ENABLE__UNM
+static int matrix_mt__unm(lua_State * L) {
+    struct Matrix * m = (struct Matrix*)luaL_checkudata(L, 1, MATRIX_MT);
+    struct Matrix * dest = push_matrix(L, m->rows, m->cols);
+    int i;
+    for (i = 0; i < m->rows * m->cols; i++) {
+        dest->d[i] = -m->d[i];
+    }
+    return 1;
+}
+#endif
+
 #ifdef MATRIX_ENABLE_RESHAPE
 static int matrix_mt_reshape(lua_State * L) {
     struct Matrix * m = (struct Matrix*)luaL_checkudata(L, 1, MATRIX_MT);
@@ -550,6 +562,9 @@ int luaopen_matrix(lua_State * L) {
 #endif
 #ifdef MATRIX_ENABLE__MOD
             {"__pow", &matrix_mt__pow},
+#endif
+#ifdef MATRIX_ENABLE__UNM
+            {"__unm", &matrix_mt__unm},
 #endif
 #ifdef MATRIX_ENABLE_RESHAPE
             {"reshape", &matrix_mt_reshape},

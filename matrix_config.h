@@ -29,6 +29,9 @@
 // support for matrix element-wise modulo operation: m^n, n^m, m^m, rv^m, m^rw, cv^m, m^cv
 #define MATRIX_ENABLE__POW
 
+// support for matrix unary minus: -m
+#define MATRIX_ENABLE__UNM
+
 // support for MUTABLE matrix reshaping: m:reshape(rows, cols) rows*cols must be equal to m.rows*m.cols
 #define MATRIX_ENABLE_RESHAPE
 
