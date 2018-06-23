@@ -15,7 +15,10 @@
  * #m == m.rows * m.cols
  */
 
-#define MATRIX_MT "matrix"
+#define XSTR(x) #x
+#define CAT_MATRIX_STR(x) XSTR(x) " matrix"
+#define MATRIX_MT CAT_MATRIX_STR(MATRIX_TYPE)
+
 #define MATRIX_MAX_TOSTRING 200
 
 struct Matrix {
