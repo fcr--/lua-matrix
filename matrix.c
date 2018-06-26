@@ -225,7 +225,7 @@ static int matrix_mt__newindex(lua_State * L) {
         int i, j, k = 0;
         if (lua_isnumber(L, 3)) {
             MATRIX_TYPE src = lua_tonumber(L, 3);
-            for (j = (col1 - 1)*stride; i < limit; i += stride) {
+            for (j = (col1 - 1)*stride; j < limit; j += stride) {
                 for (i = j; i < j + height; i++) m->d[i] = src;
             }
         } else {
@@ -253,7 +253,7 @@ static int matrix_mt__tostring(lua_State * L) {
         if (i == MATRIX_MAX_TOSTRING) {
             lua_pushstring(L, "...");
         } else if (v == (int)v) {
-            lua_pushinteger(L, v);
+            lua_pushinteger(L, (int)v);
         } else {
             lua_pushnumber(L, v);
         }
@@ -273,7 +273,7 @@ static int matrix_mt_totable(lua_State * L) {
     lua_createtable(L, size, 2);
     while (i < size) {
         MATRIX_TYPE v = m->d[i];
-        if (v == (int)v) lua_pushinteger(L, v);
+        if (v == (int)v) lua_pushinteger(L, (int)v);
         else lua_pushnumber(L, v);
         lua_rawseti(L, -2, ++i);
     }
@@ -528,7 +528,11 @@ static int matrix_mt_cswap(lua_State * L) {
 }
 #endif
 
-int luaopen_matrix(lua_State * L) {
+#ifndef EXPORT_C
+#define EXPORT_C
+#endif
+
+EXPORT_C int luaopen_matrix(lua_State * L) {
     if (luaL_newmetatable(L, MATRIX_MT)) {
         luaL_getmetatable(L, MATRIX_MT);
         lua_pushstring(L, "cols");
