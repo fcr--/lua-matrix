@@ -1,0 +1,24 @@
+MATRIX_TYPE=float
+CC = arm-epoc-pe-gcc
+CXX = arm-epoc-pe-gcc
+DLLTOOL= arm-epoc-pe-dlltool
+CFLAGS ?= -I../.. -Wall -O2 -Znoemx -DMATRIX_TYPE=$(MATRIX_TYPE) \
+	-DMATRIX_TYPE_"`echo $(MATRIX_TYPE) | tr a-z A-Z`" -Dpowf=pow -Dfmodf=fmod
+# No! this is a Bad® idea: -D_ANSIDECL_H_ -DEXPORT_C='__declspec(dllexport)' -DIMPORT_C='' \
+#                          -D'_ATTRIBUTE(attrs)=' -D__STDC__ -Dpowf=pow
+CXXFLAGS ?= $(CFLAGS)
+SOFLAGS ?= -Wall -Znoemx -uid2 0x4c756121 -uid3 "0x10`echo luamatrix-$(MATRIX_TYPE) | md5sum | cut -c1-6`"
+SOLIBS ?= -L../.. -llua53 -lestlib -leuser
+MATRIX_SO ?= matrix.dll
+
+$(MATRIX_SO): matrix.o matrix.def matrix_epoc32.o
+	$(CC) $(SOFLAGS) -shared -o $@ $^ $(SOLIBS)
+
+%.def: %.o
+	$(DLLTOOL) -z $@ $^
+
+%.o: %.c matrix_config.h
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+clean:
+	rm -rf $(MATRIX_SO) *.o *.def
