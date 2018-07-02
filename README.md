@@ -62,9 +62,9 @@ Transpose: `m:t()`
 
 LUp decomposition: `lu = m:lup()`
 > Returns a table containing the arrays for the LU decomposition, where:
-> * lu.L is a lower triangular matrix with ones on its diagonal,
-> * lu.U is an upper triangular matrix, and
-> * lu.P is a permutation matrix (also saved as a table with the indices in lu.p).
+> * `lu.L` is a lower triangular matrix with ones on its diagonal,
+> * `lu.U` is an upper triangular matrix, and
+> * `lu.P` is a permutation matrix (also saved as a table in lu.p, such that lu.P's non-zero elements are located at `{i, lu.p[i]}`).
 >
 > Note that lu.P:t():dot(lu.L:dot(lu.U)) should be approximately equal to lu ± computation errors.
 
