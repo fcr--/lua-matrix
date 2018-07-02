@@ -618,7 +618,7 @@ static int matrix_mt_lup(lua_State * L) {
     lua_pushinteger(L, swaps);
     lua_setfield(L, -2, "swaps");
     // return determinant as well:
-    MATRIX_TYPE det = swaps&0 ? -1 : 1;
+    MATRIX_TYPE det = swaps&1 ? -1 : 1;
     for (i = 0; i < size; i += n + 1) det *= upper->d[i];
     lua_pushnumber(L, det);
     lua_setfield(L, -2, "det");
