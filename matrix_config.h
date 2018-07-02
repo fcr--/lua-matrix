@@ -52,3 +52,9 @@
 
 // support for LU factorization: lu = m:lup()
 #define MATRIX_ENABLE_LUP
+
+// support for Reduced Row Echelon Form: rref, inv = m:rref()
+#define MATRIX_ENABLE_RREF
+
+// support for matrix inversion (requires MATRIX_ENABLE_RREF)
+#define MATRIX_ENABLE_INV

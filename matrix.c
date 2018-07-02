@@ -64,15 +64,18 @@ static int matrix_new(lua_State * L) {
     return 1;
 }
 
-static int matrix_id(lua_State * L) {
-    struct Matrix * m;
-    int side, size, i;
-    side = luaL_checkinteger(L, 1);
-    if (side < 1) return luaL_error(L, "invalid size %d*%d", side);
-    size = side * side;
-    m = push_matrix(L, side, side);
+struct Matrix * push_id_matrix(lua_State * L, int side) {
+    int i, size = side * side;
+    struct Matrix * m = push_matrix(L, side, side);
     for (i = 0; i < size; i++) m->d[i] = 0;
     for (i = 0; i < size; i += side + 1) m->d[i] = 1;
+    return m;
+}
+
+static int matrix_id(lua_State * L) {
+    int side = luaL_checkinteger(L, 1);
+    if (side < 1) return luaL_error(L, "invalid size %d*%d", side);
+    push_id_matrix(L, side);
     return 1;
 }
 
@@ -493,7 +496,7 @@ static int matrix_mt_tdot(lua_State * L) {
 #endif
 
 #if defined(MATRIX_ENABLE_RSWAP) || defined(MATRIX_ENABLE_LUP)
-static void matrix_rswap(struct Matrix * m, int r1, int r2) {
+static void matrix_op_rswap(struct Matrix * m, int r1, int r2) {
     int limit = m->rows * m->cols;
     for (; r1 < limit; r1 += m->rows, r2 += m->rows) {
         MATRIX_TYPE t = m->d[r1];
@@ -511,7 +514,7 @@ static int matrix_mt_rswap(lua_State * L) {
     if (r1 < 1 || r2 < 1 || r1 > m->rows || r2 > m->rows)
         return luaL_error(L, "invalid row indices for rswap: %d, %d", r1, r2);
     if (r1 == r2) return 0;
-    matrix_rswap(m, r1, r2);
+    matrix_op_rswap(m, r1, r2);
     return 0;
 }
 #endif
@@ -542,7 +545,7 @@ static int matrix_mt_cswap(lua_State * L) {
 #ifdef MATRIX_ENABLE_LUP
 static int matrix_mt_lup(lua_State * L) {
     struct Matrix * m = (struct Matrix*)luaL_checkudata(L, 1, MATRIX_MT);
-    MATRIX_TYPE tolerance = luaL_optnumber(L, 2, 1e-7);
+    MATRIX_TYPE tolerance = luaL_optnumber(L, 2, 1e-38);
     int i, j, k, swaps = 0, n = m->rows;
     int size = n*n;
     if (n != m->cols) return luaL_error(L, "square matrix required");
@@ -574,7 +577,7 @@ static int matrix_mt_lup(lua_State * L) {
             int t = p[i];
             p[i] = p[maxi];
             p[maxi] = t;
-            matrix_rswap(upper, i, maxi);
+            matrix_op_rswap(upper, i, maxi);
             swaps++;
         }
         for (j = i + 1; j < n; j++) {
@@ -621,6 +624,67 @@ static int matrix_mt_lup(lua_State * L) {
     lua_setfield(L, -2, "det");
     free(p);
     return 1;
+}
+#endif
+
+#ifdef MATRIX_ENABLE_RREF
+static int matrix_mt_rref(lua_State * L) {
+    struct Matrix * m = (struct Matrix*)luaL_checkudata(L, 1, MATRIX_MT);
+    MATRIX_TYPE tolerance = luaL_optnumber(L, 2, 1e-38);
+    MATRIX_TYPE pivot;
+    int i, j, k, i_as_column_offset, w = m->cols, h = m->rows;
+    int size = w*h;
+    struct Matrix * inv = w==h ? push_id_matrix(L, w) : NULL;
+    struct Matrix * mcopy = push_matrix(L, h, w);
+    for (i = 0; i < size; i++) mcopy->d[i] = m->d[i];
+    for (i = 0, i_as_column_offset = 0; i < h && i_as_column_offset < size; i_as_column_offset += h) {
+        int maxi = i;
+        MATRIX_TYPE maxabs = MATRIX_ABS_OP(mcopy->d[i_as_column_offset + i]);
+        for (k = i + 1; k < h; k++) {
+            MATRIX_TYPE abs_k = MATRIX_ABS_OP(mcopy->d[i_as_column_offset + k]);
+            if (abs_k > maxabs) {
+                maxabs = abs_k;
+                maxi = k;
+            }
+        }
+        if (maxabs < tolerance) continue;
+        if (i != maxi) {
+            matrix_op_rswap(mcopy, i, maxi);
+            if (inv) matrix_op_rswap(inv, i, maxi);
+        }
+        // normalize ith-row
+        pivot = mcopy->d[i_as_column_offset + i];
+        mcopy->d[i_as_column_offset + i] = 1;
+        for (k = i_as_column_offset + h; k < size; k += h) mcopy->d[k + i] /= pivot;
+        if (inv) {
+            for (k = i; k < size; k += h) inv->d[k] /= pivot;
+        }
+        // normalize remaining rows:
+        for (j = 0; j < h; j++) {
+            if (j == i) continue;
+            pivot = mcopy->d[j + i_as_column_offset];
+            if (pivot == 0) continue;
+            for (k = i_as_column_offset + h; k < size; k += h) mcopy->d[j+k] -= pivot * mcopy->d[i+k];
+            if (inv) {
+                for (k = 0; k < size; k += h) inv->d[j+k] -= pivot * inv->d[i+k];
+            }
+            mcopy->d[j + i_as_column_offset] = 0;
+        }
+        i++;
+    }
+    if (inv) {
+        lua_insert(L, -2); // swapped to return rref, inv
+        return 2;
+    }
+    return 1;
+}
+#endif
+
+#ifdef MATRIX_ENABLE_INV
+static int matrix_mt_inv(lua_State * L) {
+    struct Matrix * m = (struct Matrix*)luaL_checkudata(L, 1, MATRIX_MT);
+    if (m->rows != m->cols) return luaL_error(L, "square matrix required");
+    return matrix_mt_rref(L) - 1;
 }
 #endif
 
@@ -689,6 +753,12 @@ EXPORT_C int luaopen_matrix(lua_State * L) {
 #endif
 #ifdef MATRIX_ENABLE_LUP
             {"lup", &matrix_mt_lup},
+#endif
+#ifdef MATRIX_ENABLE_RREF
+            {"rref", &matrix_mt_rref},
+#endif
+#ifdef MATRIX_ENABLE_INV
+            {"inv", &matrix_mt_inv},
 #endif
             {NULL, NULL}
         }, 0);

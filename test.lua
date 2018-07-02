@@ -48,3 +48,6 @@ local lu = m:lup()
 local err = m - lu.P:t():dot(lu.L:dot(lu.U))
 assert((matrix.new{1,3, value=1} * err * matrix.new{3,1, value=1})[1] < 1e-5)
 
+m, m2 = matrix.fromtable{1,2, 3,4, rows=2, cols=2}:rref()
+assert(table.concat(m:totable(), ' ') == '1 0 0 1')
+assert(table.concat(m2:totable(), ' ') == '-2 1 1.5 -0.5')
