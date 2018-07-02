@@ -1,5 +1,6 @@
 #include <math.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "lua.h"
 #include "lauxlib.h"
@@ -409,6 +410,14 @@ static int matrix_mt__unm(lua_State * L) {
 }
 #endif
 
+#if defined(MATRIX_TYPE_FLOAT)
+#  define MATRIX_ABS_OP(x) fabsf(x)
+#elif defined(MATRIX_TYPE_DOUBLE)
+#  define MATRIX_ABS_OP(x) fabs(x)
+#else
+#  define MATRIX_ABS_OP(x) ((x)<0 ? -(x) : (x))
+#endif
+
 #ifdef MATRIX_ENABLE_RESHAPE
 static int matrix_mt_reshape(lua_State * L) {
     struct Matrix * m = (struct Matrix*)luaL_checkudata(L, 1, MATRIX_MT);
@@ -483,7 +492,7 @@ static int matrix_mt_tdot(lua_State * L) {
 }
 #endif
 
-#ifdef MATRIX_ENABLE_RSWAP
+#if defined(MATRIX_ENABLE_RSWAP) || defined(MATRIX_ENABLE_LUP)
 static void matrix_rswap(struct Matrix * m, int r1, int r2) {
     int limit = m->rows * m->cols;
     for (; r1 < limit; r1 += m->rows, r2 += m->rows) {
@@ -492,7 +501,9 @@ static void matrix_rswap(struct Matrix * m, int r1, int r2) {
         m->d[r2] = t;
     }
 }
+#endif
 
+#ifdef MATRIX_ENABLE_RSWAP
 static int matrix_mt_rswap(lua_State * L) {
     struct Matrix * m = (struct Matrix*)luaL_checkudata(L, 1, MATRIX_MT);
     int r1 = luaL_checkinteger(L, 2);
@@ -525,6 +536,86 @@ static int matrix_mt_cswap(lua_State * L) {
     if (c1 == c2) return 0;
     matrix_cswap(m, c1, c2);
     return 0;
+}
+#endif
+
+#ifdef MATRIX_ENABLE_LUP
+static int matrix_mt_lup(lua_State * L) {
+    struct Matrix * m = (struct Matrix*)luaL_checkudata(L, 1, MATRIX_MT);
+    MATRIX_TYPE tolerance = luaL_optnumber(L, 2, 1e-7);
+    int i, j, k, swaps = 0, n = m->rows;
+    int size = n*n;
+    if (n != m->cols) return luaL_error(L, "square matrix required");
+    int *p = malloc(sizeof (int) * n);
+    for (i = 0; i < n; i++) p[i] = i;
+    lua_createtable(L, 0, 4); //{L=..., U=..., p=ptable, swaps=integer}
+    // u starts as a copy of m:
+    struct Matrix * upper = push_matrix(L, n, n);
+    memcpy(upper->d, m->d, sizeof (MATRIX_TYPE[n*n]));
+    lua_setfield(L, -2, "U");
+    int i_as_column_offset = 0;
+    for (i = 0; i < n; i++, i_as_column_offset += n) {
+        int maxi = i;
+        MATRIX_TYPE maxabs = MATRIX_ABS_OP(upper->d[i_as_column_offset + i]);
+        for (k = i + 1; k < n; k++) {
+            MATRIX_TYPE abs_k = MATRIX_ABS_OP(upper->d[i_as_column_offset + k]);
+            if (abs_k > maxabs) {
+                maxabs = abs_k;
+                maxi = k;
+            }
+        }
+        if (maxabs < tolerance) {
+            free(p);
+            lua_pushnil(L);
+            lua_pushliteral(L, "degenerate matrix");
+            return 2;
+        }
+        if (i != maxi) {
+            int t = p[i];
+            p[i] = p[maxi];
+            p[maxi] = t;
+            matrix_rswap(upper, i, maxi);
+            swaps++;
+        }
+        for (j = i + 1; j < n; j++) {
+            MATRIX_TYPE pivot = (upper->d[j + i_as_column_offset] /= upper->d[i + i_as_column_offset]);
+            for (k = i_as_column_offset + n; k < size; k += n) {
+                upper->d[j + k] -= pivot * upper->d[i + k];
+            }
+        }
+    }
+
+    struct Matrix * lower = push_matrix(L, n, n);
+    // build L as copy of U's lower part, setting zeros in U's lower triangle, L's upper triangle
+    //       and ones into L's diagonal
+    for (i = 0, i_as_column_offset = 0; i < n; i++, i_as_column_offset += n) {
+        for (j = 0; j < i; j++) { // upper triangle
+            lower->d[i_as_column_offset + j] = 0;
+        }
+        lower->d[i_as_column_offset + i] = 1; // diagonal
+        for (j = i + 1; j < n; j++) { // lower triangle
+            lower->d[i_as_column_offset + j] = upper->d[i_as_column_offset + j];
+            upper->d[i_as_column_offset + j] = 0;
+        }
+    }
+    lua_setfield(L, -2, "L");
+    // setting p table as copy of p:
+    lua_createtable(L, n, 0);
+    for (i = 0; i < n; i++) {
+        lua_pushinteger(L, p[i]);
+        lua_rawseti(L, -2, i+1);
+    }
+    lua_setfield(L, -2, "p");
+    struct Matrix * perm = push_matrix(L, n, n);
+    // and P matrix as the permutation matrix corresponding to p:
+    for (i = 0; i < size; i++) perm->d[i] = 0;
+    for (i = 0; i < n; i++) perm->d[i + p[i]*n] = 1;
+    lua_setfield(L, -2, "P");
+    // setting swaps into returned table:
+    lua_pushinteger(L, swaps);
+    lua_setfield(L, -2, "swaps");
+    free(p);
+    return 1;
 }
 #endif
 
@@ -582,7 +673,7 @@ EXPORT_C int luaopen_matrix(lua_State * L) {
 #ifdef MATRIX_ENABLE_DOT
             {"dot", &matrix_mt_dot},
 #endif
-#ifdef MATRIX_ENABLE_DOT
+#ifdef MATRIX_ENABLE_TDOT
             {"tdot", &matrix_mt_tdot},
 #endif
 #ifdef MATRIX_ENABLE_RSWAP
@@ -590,6 +681,9 @@ EXPORT_C int luaopen_matrix(lua_State * L) {
 #endif
 #ifdef MATRIX_ENABLE_CSWAP
             {"cswap", &matrix_mt_cswap},
+#endif
+#ifdef MATRIX_ENABLE_LUP
+            {"lup", &matrix_mt_lup},
 #endif
             {NULL, NULL}
         }, 0);

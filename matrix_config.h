@@ -50,3 +50,5 @@
 // support for MUTABLE matrix column swapping: m:cswap(j1, j2)
 #define MATRIX_ENABLE_CSWAP
 
+// support for LU factorization: lu = m:lup()
+#define MATRIX_ENABLE_LUP

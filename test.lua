@@ -42,3 +42,9 @@ assert(m2[1] == 5 and m2[2] == 6)
 
 assert(table.concat((5^matrix.fromtable{2,3, rows=2}):totable(), ' ') == '25 125')
 assert(table.concat((-matrix.fromtable{1,-2, rows=2}):totable(), ' ') == '-1 2')
+
+local m = matrix.fromtable{1,1,2, 2,1,1, 3,5,7, rows=3,cols=3}
+local lu = m:lup()
+local err = m - lu.P:t():dot(lu.L:dot(lu.U))
+assert((matrix.new{1,3, value=1} * err * matrix.new{3,1, value=1})[1] < 1e-5)
+
