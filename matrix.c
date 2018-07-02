@@ -22,11 +22,6 @@
 
 #define MATRIX_MAX_TOSTRING 200
 
-struct Matrix {
-    int rows, cols;
-    MATRIX_TYPE d[]; // column major order
-};
-
 static const char * interned_rows, * interned_cols;
 
 static struct Matrix * push_matrix(lua_State * L, int rows, int cols) {

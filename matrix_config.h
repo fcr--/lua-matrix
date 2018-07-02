@@ -5,6 +5,11 @@
 //#define MATRIX_TYPE_DOUBLE
 #endif
 
+struct Matrix {
+    int rows, cols;
+    MATRIX_TYPE d[]; // column major order
+};
+
 // support for tostring(m) via __tostring metamethod
 #define MATRIX_ENABLE__TOSTRING
 
