@@ -65,8 +65,16 @@ LUp decomposition: `lu = m:lup()`
 > * `lu.L` is a lower triangular matrix with ones on its diagonal,
 > * `lu.U` is an upper triangular matrix, and
 > * `lu.P` is a permutation matrix (also saved as a table in lu.p, such that all lu.P's non-zero elements are located at `{i, lu.p[i]}`).
+> * `lu.det` m's determinant.
 >
 > Note that lu.P:t():dot(lu.L:dot(lu.U)) should be approximately equal to lu ± computation errors.
+
+Reduced Row Echelon Form: `rref, inv = m:rref()`
+> This function returns the RREF of m. If m is square it also returns m's inverse. At each column this implementation chooses the row with biggest absolute value as the pivot (swapping the rows if needed) for best stability.
+
+Matrix inversion: `inv = m:inv()`
+> The m matrix must be square or an error is returned. Since the implementation uses `select(2, m:rref())` a result is returned even if it's not invertible, so (in that case) don't expect m:inv():inv() ≈ m.
+> To check for invertibility use `m.cols == m.rows and m:rref()[m.cols*m.rows] == 1`.
 
 #### Mutable Operations
 
