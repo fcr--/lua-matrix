@@ -57,6 +57,17 @@ Slices can also be used for writing operations using a similar syntax. Let m be 
 
 TO DOCUMENT
 
+Transpose: `m:t()`
+> Returns the transposed matrix.
+
+LUp decomposition: `lu = m:lup()`
+> Returns a table containing the arrays for the LU decomposition, where:
+> * lu.L is a lower triangular matrix with ones on its diagonal,
+> * lu.U is an upper triangular matrix, and
+> * lu.P is a permutation matrix (also saved as a table with the indices in lu.p).
+>
+> Note that lu.P:t():dot(lu.L:dot(lu.U)) should be approximately equal to lu ± computation errors.
+
 #### Mutable Operations
 
 The operations documented in this section change in some or other way the content of the matrices
