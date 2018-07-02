@@ -602,7 +602,7 @@ static int matrix_mt_lup(lua_State * L) {
     // setting p table as copy of p:
     lua_createtable(L, n, 0);
     for (i = 0; i < n; i++) {
-        lua_pushinteger(L, p[i]);
+        lua_pushinteger(L, p[i] + 1);
         lua_rawseti(L, -2, i+1);
     }
     lua_setfield(L, -2, "p");
