@@ -12,7 +12,7 @@ matrix = require 'matrix'
 
 | method | description |
 |--------|-------------|
-| `m = matrix.new(h, w) or<br> m = matrix.new{h, w}` | creates a new h\*w matrix with zeros |
+| `m = matrix.new(h, w)` or<br> `m = matrix.new{h, w}` | creates a new h\*w matrix with zeros |
 | `m = matrix.new{h, w, value=v}` | creates a new h\*w matrix with value v in every cell |
 | `m = matrix.random(h, w)` | creates a random h\*w matrix (values between 0 and 1) |
 | `m = matrix.id(n)` | creates an identity n\*n matrix |
