@@ -10,11 +10,13 @@ matrix = require 'matrix'
 
 #### Creation
 
-* Creating a new h*w matrix with zeros: `matrix.new(h, w)` or `matrix.new{h, w}`.
-* Creating a new h*w matrix with some value in every cell: `matrix.new{h, w, value=42}`.
-* Creating a random h*w matrix (values between 0 and 1): `matrix.random(h, w)`.
-* Creating an identity n*n matrix: `matrix.id(n)`.
-* Creating a matrix from a table: `matrix.fromtable{v1, ..., vn, rows=h, cols=w}`.
+| method | description |
+|--------|-------------|
+| `m = matrix.new(h, w) or<br> m = matrix.new{h, w}` | creates a new h\*w matrix with zeros |
+| `m = matrix.new{h, w, value=v}` | creates a new h\*w matrix with value v in every cell |
+| `m = matrix.random(h, w)` | creates a random h\*w matrix (values between 0 and 1) |
+| `m = matrix.id(n)` | creates an identity n\*n matrix |
+| `m = matrix.fromtable{v1, ..., vn, rows=h, cols=w}` | creates a matrix from a table |
 
 #### Conversion
 
