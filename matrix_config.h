@@ -63,3 +63,24 @@ struct Matrix {
 
 // support for matrix inversion (requires MATRIX_ENABLE_RREF)
 #define MATRIX_ENABLE_INV
+
+// some unary function, where each element is applied to the corresponding C function of the same name:
+#define MATRIX_ENABLE_FLOOR
+#define MATRIX_ENABLE_CEIL
+#define MATRIX_ENABLE_ACOS
+#define MATRIX_ENABLE_ASIN
+#define MATRIX_ENABLE_ATAN
+#define MATRIX_ENABLE_COS
+#define MATRIX_ENABLE_SIN
+#define MATRIX_ENABLE_TAN
+#define MATRIX_ENABLE_COSH
+#define MATRIX_ENABLE_SINH
+#define MATRIX_ENABLE_TANH
+#define MATRIX_ENABLE_EXP
+#define MATRIX_ENABLE_LOG
+#define MATRIX_ENABLE_LOG10
+#define MATRIX_ENABLE_SQRT
+#define MATRIX_ENABLE_ABS
+#define MATRIX_ENABLE_ISINF
+#define MATRIX_ENABLE_FINITE
+#define MATRIX_ENABLE_ISNAN

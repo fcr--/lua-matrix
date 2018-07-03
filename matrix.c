@@ -90,6 +90,24 @@ static int matrix_random(lua_State * L) {
     return 1;
 }
 
+#if defined(LUA_VERSION_NUM) && LUA_VERSION_NUM == 501 
+static int lua_absindex (lua_State *L, int i) { 
+    if (i < 0 && i > LUA_REGISTRYINDEX) 
+        i += lua_gettop(L) + 1; 
+    return i; 
+} 
+#endif
+
+#if defined( LUA_VERSION_NUM ) && LUA_VERSION_NUM <= 502 
+static int lua_geti (lua_State *L, int index, lua_Integer i) { 
+    index = lua_absindex(L, index); 
+    lua_pushinteger(L, i); 
+    lua_gettable(L, index); 
+    return lua_type(L, -1); 
+} 
+#endif
+
+
 static int matrix_fromtable(lua_State * L) {
     struct Matrix * m;
     int rows, cols, i;
@@ -408,6 +426,25 @@ static int matrix_mt__unm(lua_State * L) {
 }
 #endif
 
+#if defined(MATRIX_ENABLE_FLOOR) || defined(MATRIX_ENABLE_CEIL) || defined(MATRIX_ENABLE_ACOS) || \
+    defined(MATRIX_ENABLE_ASIN) || defined(MATRIX_ENABLE_ATAN) || defined(MATRIX_ENABLE_COS) || \
+    defined(MATRIX_ENABLE_SIN) || defined(MATRIX_ENABLE_TAN) || defined(MATRIX_ENABLE_COSH) || \
+    defined(MATRIX_ENABLE_SINH) || defined(MATRIX_ENABLE_TANH) || defined(MATRIX_ENABLE_EXP) || \
+    defined(MATRIX_ENABLE_LOG) || defined(MATRIX_ENABLE_LOG10) || defined(MATRIX_ENABLE_SQRT) || \
+    defined(MATRIX_ENABLE_ABS) || defined(MATRIX_ENABLE_ISINF) || defined(MATRIX_ENABLE_FINITE) || \
+    defined(MATRIX_ENABLE_ISNAN)
+static int matrix_op_unary(lua_State * L) {
+    struct Matrix * m = (struct Matrix*)luaL_checkudata(L, 1, MATRIX_MT);
+    struct Matrix * dest = push_matrix(L, m->rows, m->cols);
+    int i;
+    MATRIX_TYPE (*fn)(MATRIX_TYPE) = lua_touserdata(L, lua_upvalueindex(1));
+    for (i = 0; i < m->rows * m->cols; i++) {
+        dest->d[i] = fn(m->d[i]);
+    }
+    return 1;
+}
+#endif
+
 #if defined(MATRIX_TYPE_FLOAT)
 #  define MATRIX_ABS_OP(x) fabsf(x)
 #elif defined(MATRIX_TYPE_DOUBLE)
@@ -687,6 +724,38 @@ static int matrix_mt_inv(lua_State * L) {
 #define EXPORT_C
 #endif
 
+// copied from lua 5.3 and modified for nup removal:
+struct matrix_luaL_Reg {
+    const char * name;
+    lua_CFunction func;
+};
+LUALIB_API void matrix_luaL_setfuncs (lua_State *L, const struct matrix_luaL_Reg *l) {
+    for (; l->name != NULL; l++) {
+        lua_pushcclosure(L, l->func, 0);
+        lua_setfield(L, -2, l->name);
+    }
+}
+struct matrix_luaL_RegUd {
+    const char * name;
+    lua_CFunction func;
+    void * upvalue;
+};
+LUALIB_API void matrix_luaL_setfuncs_ud (lua_State *L, const struct matrix_luaL_RegUd *l) {
+    for (; l->name != NULL; l++) {  /* fill the table with given functions */
+        lua_pushlightuserdata(L, l->upvalue);
+        lua_pushcclosure(L, l->func, 1);
+        lua_setfield(L, -2, l->name);
+    }
+}
+
+#if defined(MATRIX_TYPE_FLOAT)
+#  define matrix_op_unary_declare(name, float_fn, double_fn) { name, matrix_op_unary, float_fn },
+#elif defined(MATRIX_TYPE_DOUBLE)
+#  define matrix_op_unary_declare(name, float_fn, double_fn) { name, matrix_op_unary, double_fn },
+#else
+#  error "unary op only supported for float and double"
+#endif
+
 EXPORT_C int luaopen_matrix(lua_State * L) {
     if (luaL_newmetatable(L, MATRIX_MT)) {
         luaL_getmetatable(L, MATRIX_MT);
@@ -698,7 +767,7 @@ EXPORT_C int luaopen_matrix(lua_State * L) {
         interned_rows = lua_tostring(L, -1);
         lua_pushinteger(L, -1);
         lua_settable(L, -3);
-        luaL_setfuncs(L, (struct luaL_Reg[]){
+        matrix_luaL_setfuncs(L, (struct matrix_luaL_Reg[]){
             {"__index", &matrix_mt__index},
             {"__newindex", &matrix_mt__newindex},
 #ifdef MATRIX_ENABLE__TOSTRING
@@ -756,18 +825,78 @@ EXPORT_C int luaopen_matrix(lua_State * L) {
             {"inv", &matrix_mt_inv},
 #endif
             {NULL, NULL}
-        }, 0);
+        });
+        matrix_luaL_setfuncs_ud(L, (struct matrix_luaL_RegUd[]){
+#ifdef MATRIX_ENABLE_FLOOR
+            matrix_op_unary_declare("floor", floorf, floor)
+#endif
+#ifdef MATRIX_ENABLE_CEIL
+            matrix_op_unary_declare("ceil", ceilf, ceil)
+#endif
+#ifdef MATRIX_ENABLE_ACOS
+            matrix_op_unary_declare("acos", acosf, acos)
+#endif
+#ifdef MATRIX_ENABLE_ASIN
+            matrix_op_unary_declare("asin", asinf, asin)
+#endif
+#ifdef MATRIX_ENABLE_ATAN
+            matrix_op_unary_declare("atan", atanf, atan)
+#endif
+#ifdef MATRIX_ENABLE_COS
+            matrix_op_unary_declare("cos", cosf, cos)
+#endif
+#ifdef MATRIX_ENABLE_SIN
+            matrix_op_unary_declare("sin", sinf, sin)
+#endif
+#ifdef MATRIX_ENABLE_TAN
+            matrix_op_unary_declare("tan", tanf, tan)
+#endif
+#ifdef MATRIX_ENABLE_COSH
+            matrix_op_unary_declare("cosh", coshf, cosh)
+#endif
+#ifdef MATRIX_ENABLE_SINH
+            matrix_op_unary_declare("sinh", sinhf, sinh)
+#endif
+#ifdef MATRIX_ENABLE_TANH
+            matrix_op_unary_declare("tanh", tanhf, tanh)
+#endif
+#ifdef MATRIX_ENABLE_EXP
+            matrix_op_unary_declare("exp", expf, exp)
+#endif
+#ifdef MATRIX_ENABLE_LOG
+            matrix_op_unary_declare("log", logf, log)
+#endif
+#ifdef MATRIX_ENABLE_LOG10
+            matrix_op_unary_declare("log10", log10f, log10)
+#endif
+#ifdef MATRIX_ENABLE_SQRT
+            matrix_op_unary_declare("sqrt", sqrtf, sqrt)
+#endif
+#ifdef MATRIX_ENABLE_ABS
+            matrix_op_unary_declare("abs", fabsf, fabs)
+#endif
+#ifdef MATRIX_ENABLE_ISINF
+            matrix_op_unary_declare("isinf", isinff, isinf)
+#endif
+#ifdef MATRIX_ENABLE_FINITE
+            matrix_op_unary_declare("finite", finitef, finite)
+#endif
+#ifdef MATRIX_ENABLE_ISNAN
+            matrix_op_unary_declare("isnan", isnanf, isnan)
+#endif
+            {NULL, NULL}
+        });
     }
     lua_pop(L, 1); // discard metatable
     // main table:
     lua_newtable(L);
-    luaL_setfuncs(L, (struct luaL_Reg[]){
+    matrix_luaL_setfuncs(L, (struct matrix_luaL_Reg[]){
         {"new",    &matrix_new},
         {"id",     &matrix_id},
         {"random", &matrix_random},
         {"fromtable", &matrix_fromtable},
         {NULL,     NULL}
-    }, 0);
+    });
     return 1;
 }
 // vi: et sw=4

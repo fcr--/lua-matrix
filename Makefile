@@ -1,3 +1,4 @@
+#CFLAGS ?= `pkg-config --cflags luajit` -fpic -Wall -O2 -march=native
 CFLAGS ?= `pkg-config --cflags lua5.3` -fpic -Wall -O2 -march=native
 MATRIX_SO ?= matrix.so
 
