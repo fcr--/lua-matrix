@@ -57,7 +57,22 @@ Slices can also be used for writing operations using a similar syntax. Let m be 
 
 #### Operations
 
-TO DOCUMENT
+| element to element operation | description |
+|--------|-------------|
+| `m+N`, `N+m`, `m+m`, `rv+m`, `m+rw`, `cv+m`, `m+cv` | add matrix with number, matrix, row vector or column vector |
+| `m-N`, `N-m`, `m-m`, `rv-m`, `m-rw`, `cv+m`, `m-cv` | substract matrix to/from number, matrix, row vector or column vector |
+| `m*N`, `N*m`, `m*m`, `rv*m`, `m*rw`, `cv*m`, `m*cv` | element to element multiplication |
+| `m/N`, `N/m`, `m/m`, `rv/m`, `m/rw`, `cv/m`, `m/cv` | element to element division |
+| `m%N`, `N%m`, `m%m`, `rv%m`, `m%rw`, `cv%m`, `m%cv` | element to element remainder of division |
+| `m^N`, `N^m`, `m^m`, `rv^m`, `m^rw`, `cv^m`, `m^cv` | element to element exponentiation |
+| `-m` | negation (equivalent to `0-m`) |
+
+| matrix operation | description |
+|------------------|-------------|
+| `m:t()`          | transposed matrix |
+| `m:lup()`        | LU decomposition (with permutation) and determinant |
+| `m:rref()`       | reduced row echelon form |
+| `m:inv()`        | matrix inversion using rref |
 
 Transpose: `m:t()`
 > Returns the transposed matrix.
