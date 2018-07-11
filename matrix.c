@@ -1,3 +1,7 @@
+#ifdef __EPOC32__
+#include <_ansi.h>
+#undef _STRICT_ANSI
+#endif
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
@@ -21,8 +25,6 @@
 #define MATRIX_MT CAT_MATRIX_STR(MATRIX_TYPE)
 
 #define MATRIX_MAX_TOSTRING 200
-
-static const char * interned_rows, * interned_cols;
 
 static struct Matrix * push_matrix(lua_State * L, int rows, int cols) {
     struct Matrix * m = (struct Matrix *) lua_newuserdata(L, sizeof (struct Matrix) + sizeof (MATRIX_TYPE[rows*cols]));
@@ -112,9 +114,9 @@ static int matrix_fromtable(lua_State * L) {
     struct Matrix * m;
     int rows, cols, i;
     if (!lua_istable(L, 1)) return luaL_error(L, "fromtable requires a table");
-    lua_getfield(L, 1, interned_rows);
+    lua_getfield(L, 1, "rows");
     rows = luaL_optinteger(L, -1, 1);
-    lua_getfield(L, 1, interned_cols);
+    lua_getfield(L, 1, "cols");
     cols = luaL_optinteger(L, -1, 1);
     lua_len(L, 1);
     if (luaL_checkinteger(L, -1) != rows * cols)
@@ -132,10 +134,10 @@ static int matrix_mt__index(lua_State * L) {
     struct Matrix * m = (struct Matrix*)luaL_checkudata(L, 1, MATRIX_MT);
     if (lua_type(L, 2) == LUA_TSTRING && lua_getmetatable(L, 1)) {
         const char * key = lua_tostring(L, 2);
-        if (key == interned_cols) {
+        if (!strcmp(key, "cols")) {
             lua_pushinteger(L, m->cols);
             return 1;
-        } else if (key == interned_rows) {
+        } else if (!strcmp(key, "rows")) {
             lua_pushinteger(L, m->rows);
             return 1;
         }
@@ -295,9 +297,9 @@ static int matrix_mt_totable(lua_State * L) {
         lua_rawseti(L, -2, ++i);
     }
     lua_pushinteger(L, m->rows);
-    lua_setfield(L, -2, interned_rows);
+    lua_setfield(L, -2, "rows");
     lua_pushinteger(L, m->cols);
-    lua_setfield(L, -2, interned_cols);
+    lua_setfield(L, -2, "cols");
     return 1;
 }
 #endif
@@ -759,14 +761,10 @@ LUALIB_API void matrix_luaL_setfuncs_ud (lua_State *L, const struct matrix_luaL_
 EXPORT_C int luaopen_matrix(lua_State * L) {
     if (luaL_newmetatable(L, MATRIX_MT)) {
         luaL_getmetatable(L, MATRIX_MT);
-        lua_pushstring(L, "cols");
-        interned_cols = lua_tostring(L, -1);
         lua_pushinteger(L, -1);
-        lua_settable(L, -3);
-        lua_pushstring(L, "rows");
-        interned_rows = lua_tostring(L, -1);
+        lua_setfield(L, -2, "cols");
         lua_pushinteger(L, -1);
-        lua_settable(L, -3);
+        lua_setfield(L, -2, "rows");
         matrix_luaL_setfuncs(L, (struct matrix_luaL_Reg[]){
             {"__index", &matrix_mt__index},
             {"__newindex", &matrix_mt__newindex},
