@@ -244,7 +244,7 @@ static int matrix_mt__newindex(lua_State * L) {
         int i, j, k = 0;
         if (lua_isnumber(L, 3)) {
             MATRIX_TYPE src = lua_tonumber(L, 3);
-            for (j = (col1 - 1)*stride; j < limit; j += stride) {
+            for (j = row1 - 1 + (col1 - 1)*stride; j < limit; j += stride) {
                 for (i = j; i < j + height; i++) m->d[i] = src;
             }
         } else {
